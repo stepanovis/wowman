@@ -36,7 +36,7 @@ services:
     environment:
       # Bot configuration
       BOT_TOKEN: ${BOT_TOKEN}
-      WEBAPP_URL: ${WEBAPP_URL}
+      WEBAPP_URL: ${WEBAPP_URL:-}
       WEBAPP_DEV: ${WEBAPP_DEV:-false}
 
       # Database configuration

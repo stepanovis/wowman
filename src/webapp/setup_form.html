@@ -406,8 +406,20 @@
             };
 
             // Send data to bot
-            tg.sendData(JSON.stringify(data));
-            tg.HapticFeedback.notificationOccurred('success');
+            try {
+                tg.sendData(JSON.stringify(data));
+                tg.HapticFeedback.notificationOccurred('success');
+                // Close WebApp after sending data
+                setTimeout(() => {
+                    tg.close();
+                }, 100);
+            } catch (error) {
+                console.error('Error sending data:', error);
+                tg.showAlert('Ошибка отправки данных: ' + error.message);
+                tg.MainButton.hideProgress();
+                form.style.display = 'block';
+                loadingDiv.classList.remove('visible');
+            }
         });
 
         // Handle back button
