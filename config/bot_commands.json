@@ -1,0 +1,34 @@
+{
+  "commands": [
+    {
+      "command": "start",
+      "description": "Начать работу с ботом"
+    },
+    {
+      "command": "help",
+      "description": "Помощь и инструкции"
+    },
+    {
+      "command": "settings",
+      "description": "Настройки параметров цикла"
+    },
+    {
+      "command": "status",
+      "description": "Текущее состояние цикла"
+    },
+    {
+      "command": "history",
+      "description": "История циклов"
+    },
+    {
+      "command": "notifications",
+      "description": "Управление уведомлениями"
+    }
+  ],
+  "bot_info": {
+    "description": "Бот для отслеживания менструального цикла с расчетом овуляции, фертильного окна и безопасных периодов. Включает систему уведомлений для важных дат цикла.",
+    "about_text": "Трекер менструального цикла с прогнозами и уведомлениями",
+    "name_suggestion": "Ovulo Cycle Tracker",
+    "username_suggestion": "ovulo_cycle_bot"
+  }
+}

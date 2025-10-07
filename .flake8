@@ -1,0 +1,26 @@
+[flake8]
+max-line-length = 100
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .env,
+    migrations,
+    .pytest_cache,
+    htmlcov,
+    .coverage
+ignore =
+    # Black compatibility
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    # Common Python patterns
+    E501,  # line too long (handled by max-line-length)
+    # Allow lambda expressions
+    E731,  # do not assign a lambda expression
+per-file-ignores =
+    # Allow imports at the bottom of __init__.py
+    __init__.py:F401,E402
+    # Allow test files to be longer
+    test_*.py:E501
+max-complexity = 10

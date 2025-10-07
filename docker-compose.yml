@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ovulo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ovulo}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ovulo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ovulo_network
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ovulo-bot:latest
+    container_name: ovulo_bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Bot configuration
+      BOT_TOKEN: ${BOT_TOKEN}
+      WEBAPP_URL: ${WEBAPP_URL}
+      WEBAPP_DEV: ${WEBAPP_DEV:-false}
+
+      # Database configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ovulo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Logging configuration
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENV: ${ENV:-production}
+
+      # Admin configuration (optional)
+      ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID}
+
+      # Timezone
+      TZ: ${TZ:-Europe/Moscow}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./alembic.ini:/app/alembic.ini:ro
+      - ./migrations:/app/migrations:ro
+      - ./src:/app/src:ro
+      - ./docker:/app/docker:ro
+    entrypoint: ["/app/docker/entrypoint.sh"]
+    command: ["python", "src/main.py"]
+    networks:
+      - ovulo_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Optional: Web interface for WebApp (development only)
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ovulo-bot:latest
+    container_name: ovulo_webapp
+    restart: unless-stopped
+    profiles:
+      - webapp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ovulo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8080:8080"
+    command: ["python", "src/webapp/server.py"]
+    networks:
+      - ovulo_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  ovulo_network:
+    driver: bridge
+    name: ovulo_network
