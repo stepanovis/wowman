@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Настройка цикла</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color, #000000);
+            margin-bottom: 8px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 4px;
+        }
+
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 1px solid var(--tg-theme-hint-color, #cccccc);
+            border-radius: 12px;
+            background: var(--tg-theme-secondary-bg-color, #f2f2f2);
+            color: var(--tg-theme-text-color, #000000);
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #3390ec);
+            background: var(--tg-theme-bg-color, #ffffff);
+        }
+
+        input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            display: none;
+            font-size: 12px;
+            color: #ff3b30;
+            margin-top: 6px;
+            padding: 8px 12px;
+            background: rgba(255, 59, 48, 0.1);
+            border-radius: 8px;
+        }
+
+        .error.visible {
+            display: block;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.visible {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--tg-theme-hint-color, #cccccc);
+            border-top-color: var(--tg-theme-button-color, #3390ec);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--tg-theme-hint-color, #999999);
+            font-size: 14px;
+        }
+
+        /* Date input customization for mobile */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            color: var(--tg-theme-link-color, #3390ec);
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Number input arrows styling */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 40px;
+        }
+
+        /* Success checkmark animation */
+        @keyframes checkmark {
+            0% {
+                stroke-dashoffset: 50;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .field-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Настройка цикла</h1>
+        <p class="subtitle">Введите данные для расчета овуляции и фертильного окна</p>
+
+        <form id="setupForm">
+            <div class="form-group">
+                <label for="lastPeriod">
+                    <span class="field-icon">📅</span>
+                    Дата начала последних месячных
+                </label>
+                <input type="date" id="lastPeriod" name="lastPeriod" required>
+                <div class="hint">Выберите первый день последней менструации</div>
+                <div class="error" id="lastPeriodError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="cycleLength">
+                    <span class="field-icon">🔄</span>
+                    Длина цикла (в днях)
+                </label>
+                <input type="number" id="cycleLength" name="cycleLength" min="21" max="40" value="28" required>
+                <div class="hint">Обычно от 21 до 40 дней (в среднем 28)</div>
+                <div class="error" id="cycleLengthError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="periodLength">
+                    <span class="field-icon">🩸</span>
+                    Длина месячных (в днях)
+                </label>
+                <input type="number" id="periodLength" name="periodLength" min="1" max="10" value="5" required>
+                <div class="hint">Обычно от 3 до 7 дней</div>
+                <div class="error" id="periodLengthError"></div>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Сохраняем настройки...</div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Configure main button
+        tg.MainButton.text = "Сохранить настройки";
+        tg.MainButton.color = tg.themeParams.button_color || "#3390ec";
+        tg.MainButton.textColor = tg.themeParams.button_text_color || "#ffffff";
+
+        // Form elements
+        const form = document.getElementById('setupForm');
+        const lastPeriodInput = document.getElementById('lastPeriod');
+        const cycleLengthInput = document.getElementById('cycleLength');
+        const periodLengthInput = document.getElementById('periodLength');
+        const loadingDiv = document.getElementById('loading');
+
+        // Set max date to today for date input
+        const today = new Date().toISOString().split('T')[0];
+        lastPeriodInput.max = today;
+
+        // Set default date to 7 days ago
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        lastPeriodInput.value = weekAgo.toISOString().split('T')[0];
+
+        // Error messages
+        const errorMessages = {
+            lastPeriod: {
+                required: 'Пожалуйста, выберите дату',
+                future: 'Дата не может быть в будущем',
+                tooOld: 'Дата слишком давняя (более 60 дней)'
+            },
+            cycleLength: {
+                required: 'Введите длину цикла',
+                min: 'Минимальная длина цикла - 21 день',
+                max: 'Максимальная длина цикла - 40 дней',
+                invalid: 'Введите корректное число'
+            },
+            periodLength: {
+                required: 'Введите длину месячных',
+                min: 'Минимальная длина - 1 день',
+                max: 'Максимальная длина - 10 дней',
+                invalid: 'Введите корректное число'
+            }
+        };
+
+        // Validation functions
+        function showError(fieldId, message) {
+            const errorDiv = document.getElementById(fieldId + 'Error');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('visible');
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+
+        function hideError(fieldId) {
+            const errorDiv = document.getElementById(fieldId + 'Error');
+            errorDiv.classList.remove('visible');
+        }
+
+        function validateLastPeriod() {
+            const value = lastPeriodInput.value;
+
+            if (!value) {
+                showError('lastPeriod', errorMessages.lastPeriod.required);
+                return false;
+            }
+
+            const selectedDate = new Date(value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate > today) {
+                showError('lastPeriod', errorMessages.lastPeriod.future);
+                return false;
+            }
+
+            const daysDiff = Math.floor((today - selectedDate) / (1000 * 60 * 60 * 24));
+            if (daysDiff > 60) {
+                showError('lastPeriod', errorMessages.lastPeriod.tooOld);
+                return false;
+            }
+
+            hideError('lastPeriod');
+            return true;
+        }
+
+        function validateCycleLength() {
+            const value = parseInt(cycleLengthInput.value);
+
+            if (!cycleLengthInput.value) {
+                showError('cycleLength', errorMessages.cycleLength.required);
+                return false;
+            }
+
+            if (isNaN(value)) {
+                showError('cycleLength', errorMessages.cycleLength.invalid);
+                return false;
+            }
+
+            if (value < 21) {
+                showError('cycleLength', errorMessages.cycleLength.min);
+                return false;
+            }
+
+            if (value > 40) {
+                showError('cycleLength', errorMessages.cycleLength.max);
+                return false;
+            }
+
+            hideError('cycleLength');
+            return true;
+        }
+
+        function validatePeriodLength() {
+            const value = parseInt(periodLengthInput.value);
+
+            if (!periodLengthInput.value) {
+                showError('periodLength', errorMessages.periodLength.required);
+                return false;
+            }
+
+            if (isNaN(value)) {
+                showError('periodLength', errorMessages.periodLength.invalid);
+                return false;
+            }
+
+            if (value < 1) {
+                showError('periodLength', errorMessages.periodLength.min);
+                return false;
+            }
+
+            if (value > 10) {
+                showError('periodLength', errorMessages.periodLength.max);
+                return false;
+            }
+
+            hideError('periodLength');
+            return true;
+        }
+
+        function validateForm() {
+            const isLastPeriodValid = validateLastPeriod();
+            const isCycleLengthValid = validateCycleLength();
+            const isPeriodLengthValid = validatePeriodLength();
+
+            return isLastPeriodValid && isCycleLengthValid && isPeriodLengthValid;
+        }
+
+        // Real-time validation
+        lastPeriodInput.addEventListener('change', validateLastPeriod);
+        cycleLengthInput.addEventListener('input', validateCycleLength);
+        periodLengthInput.addEventListener('input', validatePeriodLength);
+
+        // Check if form is valid and show/hide main button
+        function updateMainButton() {
+            if (validateForm()) {
+                tg.MainButton.show();
+                tg.MainButton.enable();
+            } else {
+                tg.MainButton.hide();
+            }
+        }
+
+        // Initial button state
+        updateMainButton();
+
+        // Update button on any input change
+        form.addEventListener('input', updateMainButton);
+        form.addEventListener('change', updateMainButton);
+
+        // Handle main button click
+        tg.MainButton.onClick(function() {
+            if (!validateForm()) {
+                tg.HapticFeedback.notificationOccurred('error');
+                return;
+            }
+
+            // Disable inputs and show loading
+            lastPeriodInput.disabled = true;
+            cycleLengthInput.disabled = true;
+            periodLengthInput.disabled = true;
+            form.style.display = 'none';
+            loadingDiv.classList.add('visible');
+            tg.MainButton.showProgress();
+
+            // Prepare data
+            const data = {
+                last_period_date: lastPeriodInput.value,
+                cycle_length: parseInt(cycleLengthInput.value),
+                period_length: parseInt(periodLengthInput.value)
+            };
+
+            // Send data to bot
+            tg.sendData(JSON.stringify(data));
+            tg.HapticFeedback.notificationOccurred('success');
+        });
+
+        // Handle back button
+        tg.BackButton.show();
+        tg.BackButton.onClick(function() {
+            tg.close();
+        });
+
+        // Adjust colors based on theme
+        if (tg.colorScheme === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // Handle theme changes
+        tg.onEvent('themeChanged', function() {
+            if (tg.colorScheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            } else {
+                document.body.classList.remove('dark-theme');
+            }
+        });
+    </script>
+</body>
+</html>
